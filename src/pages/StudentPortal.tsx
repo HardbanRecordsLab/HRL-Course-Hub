@@ -24,8 +24,8 @@ interface StudentCourse {
 
 const initialCourses: StudentCourse[] = [
   { id: 1, title: "Cyfrowy Zen", slug: "cyfrowy-zen", description: "Przestań się rozpraszać. Zacznij żyć świadomie w cyfrowym świecie.", url: "https://cyfrowy-zen.hardbanrecordslab.online", category: "Mindset", progress: 72, totalLessons: 18, completedLessons: 13, lastAccessed: "2 godz. temu", expiresAt: null, status: "active", thumbnail: "🧘" },
-  { id: 2, title: "Architekt Popytu 4.0", slug: "architekt-popytu", description: "Zbuduj system pozyskiwania klientów, który pracuje za Ciebie 24/7.", url: "https://architekt-popytu.vercel.app", category: "Marketing", progress: 35, totalLessons: 24, completedLessons: 8, lastAccessed: "wczoraj", expiresAt: "2026-06-15", status: "active", thumbnail: "🚀" },
-  { id: 3, title: "EFT po toksycznym związku", slug: "magdalena-iskra", description: "Uwolnij się od emocjonalnych blokad i odbuduj wewnętrzną siłę.", url: "https://magdalena-iskra.vercel.app", category: "Terapia", progress: 100, totalLessons: 12, completedLessons: 12, lastAccessed: "3 dni temu", expiresAt: null, status: "completed", thumbnail: "💎" },
+  { id: 2, title: "Architekt Popytu 4.0", slug: "architekt-popytu", description: "Zbuduj system pozyskiwania klientów, który pracuje za Ciebie 24/7.", url: "https://architekt-popytu.hardbanrecordslab.online", category: "Marketing", progress: 35, totalLessons: 24, completedLessons: 8, lastAccessed: "wczoraj", expiresAt: "2026-06-15", status: "active", thumbnail: "🚀" },
+  { id: 3, title: "EFT po toksycznym związku", slug: "magdalena-iskra", description: "Uwolnij się od emocjonalnych blokad i odbuduj wewnętrzną siłę.", url: "https://magdalena-iskra.hardbanrecordslab.online", category: "Terapia", progress: 100, totalLessons: 12, completedLessons: 12, lastAccessed: "3 dni temu", expiresAt: null, status: "completed", thumbnail: "💎" },
 ];
 
 const user = { firstName: "Anna", lastName: "Kowalska", email: "anna@example.com", level: "Pro", memberSince: "marzec 2025" };
@@ -38,7 +38,7 @@ export default function StudentPortal() {
   const { toast } = useToast();
 
   const copyLink = () => {
-    navigator.clipboard.writeText("https://twojadomena.pl/?ref=anna-k");
+    navigator.clipboard.writeText("https://app-course-hub.hardbanrecordslab.online/?ref=anna-k");
     setCopied(true);
     toast({ title: "Skopiowano!", description: "Link afiliacyjny skopiowany do schowka" });
     setTimeout(() => setCopied(false), 2000);
@@ -183,7 +183,7 @@ export default function StudentPortal() {
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border">
-                  <span className="text-xs font-mono text-muted-foreground truncate">https://twojadomena.pl/?ref=anna-k</span>
+                  <span className="text-xs font-mono text-muted-foreground truncate">https://app-course-hub.hardbanrecordslab.online/?ref=anna-k</span>
                 </div>
                 <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={copyLink}>
                   {copied ? <><Check className="w-3 h-3" /> Skopiowano!</> : <><Copy className="w-3 h-3" /> Kopiuj link</>}

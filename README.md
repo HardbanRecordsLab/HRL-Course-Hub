@@ -1,73 +1,42 @@
-# Welcome to your Lovable project
+# 🛡️ HRL Course Hub
 
-## Project info
+Centralny HUB ekosystemu **HardbanRecords Lab** do zarządzania dostępem do zewnętrznych kursów, webooków i platform edukacyjnych.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 O projekcie
 
-## How can I edit this code?
+HRL Course Hub to zaawansowany manager dashboard, który łączy się z instalacjami WordPress (przez REST API i Paid Memberships Pro), umożliwiając centralne zarządzanie uprawnieniami uczniów, generowanie tokenów JWT oraz monitorowanie aktywności na wielu platformach jednocześnie.
 
-There are several ways of editing your application.
+### Kluczowe funkcje:
+- **Centralny Dashboard**: Przegląd statystyk z całego ekosystemu HRL.
+- **Integracja WordPress**: Bezpośrednie połączenie z WP REST API.
+- **Zarządzanie Użytkownikami**: Podgląd historii dostępów i poziomów członkostwa PMPro.
+- **System Tokenów JWT**: Bezpieczne autoryzowanie dostępu do zewnętrznych domen (np. Vercel).
+- **Automatyzacje**: Integracje z MailerLite, Brevo, Slack, Telegram i n8n.
+- **Portal Ucznia**: Przejrzysty widok posiadanych kursów dla użytkowników końcowych.
 
-**Use Lovable**
+## 🛠️ Technologia
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Frontend**: React 18, Vite, TypeScript
+- **UI**: Tailwind CSS, shadcn/ui, Framer Motion
+- **Ikony**: Lucide React
+- **Backend (Bridge)**: Python (FastAPI) w folderze `/backend`
+- **Deployment**: Gotowy do wdrożenia na Vercel (`vercel.json`)
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📦 Instalacja i uruchomienie
 
-**Use your preferred IDE**
+1. Sklonuj repozytorium
+2. Zainstaluj zależności:
+   ```bash
+   npm install
+   ```
+3. Uruchom serwer deweloperski:
+   ```bash
+   npm run dev
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🌐 Deployment na Vercel
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Projekt zawiera plik `vercel.json` skonfigurowany pod architekturę SPA oraz proxy dla API. Pamiętaj o ustawieniu zmiennych środowiskowych w panelu Vercel, jeśli Twoja konfiguracja WordPress tego wymaga.
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+© 2026 **HardbanRecords Lab** · Wszystkie prawa zastrzeżone.

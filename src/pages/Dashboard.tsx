@@ -39,7 +39,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Przegląd platformy CourseHub Manager</p>
+          <p className="text-sm text-muted-foreground mt-1">Przegląd platformy HRL Course Hub</p>
         </div>
         <div className="flex items-center gap-1.5 text-xs">
           {isWpConnected ? (

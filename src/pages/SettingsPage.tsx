@@ -97,7 +97,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Ustawienia</h1>
-        <p className="text-sm text-muted-foreground mt-1">Konfiguracja CourseHub Manager</p>
+        <p className="text-sm text-muted-foreground mt-1">Konfiguracja HRL Course Hub</p>
       </div>
 
       {!selectedIntegration && (
@@ -144,7 +144,7 @@ export default function SettingsPage() {
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">URL WordPress</label>
                   <input value={wpUrl} onChange={e => setWpUrl(e.target.value)}
-                    placeholder="https://twojadomena.pl"
+                    placeholder="https://course-hub.hardbanrecordslab.online"
                     className="w-full max-w-lg px-4 py-2.5 rounded-lg bg-ch-surface-2 border border-border text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary" />
                   <p className="text-[11px] text-muted-foreground mt-1">Adres Twojej strony WordPress (bez /wp-json)</p>
                 </div>
@@ -214,7 +214,7 @@ export default function SettingsPage() {
               <motion.div key="general" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-xl bg-card border border-border p-6 space-y-5">
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Nazwa platformy</label>
-                  <input defaultValue="Moja Platforma Kursów" className="w-full max-w-md px-4 py-2.5 rounded-lg bg-ch-surface-2 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                  <input defaultValue="HRL Course Hub" className="w-full max-w-md px-4 py-2.5 rounded-lg bg-ch-surface-2 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Strona portalu ucznia</label>
@@ -320,12 +320,12 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 max-w-lg">
                   <div>
-                    <label className="text-sm font-medium mb-1.5 block">From Name</label>
-                    <input defaultValue="Moja Platforma" className="w-full px-4 py-2.5 rounded-lg bg-ch-surface-2 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <label className="text-sm font-medium mb-1.5 block">Nazwa nadawcy</label>
+                    <input defaultValue="HRL Course Hub" className="w-full px-4 py-2.5 rounded-lg bg-ch-surface-2 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1.5 block">From Email</label>
-                    <input defaultValue="kursy@twojadomena.pl" className="w-full px-4 py-2.5 rounded-lg bg-ch-surface-2 border border-border text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary" />
+                    <label className="text-sm font-medium mb-1.5 block">Email nadawcy</label>
+                    <input defaultValue="kursy@hardbanrecordslab.online" type="email" className="w-full px-4 py-2.5 rounded-lg bg-ch-surface-2 border border-border text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary" />
                   </div>
                 </div>
                 <Button onClick={handleSave} disabled={saving} className="gap-2 mt-4">

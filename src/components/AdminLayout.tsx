@@ -37,11 +37,11 @@ export default function AdminLayout() {
       <aside className="hidden md:flex w-64 flex-col bg-sidebar border-r border-sidebar-border fixed inset-y-0 left-0 z-30">
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <Zap className="w-5 h-5 text-primary-foreground" />
+            <div className="w-9 h-9 flex items-center justify-center overflow-hidden rounded-lg">
+              <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">CourseHub</h1>
+              <h1 className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">HRL Course Hub</h1>
               <p className="text-[10px] text-sidebar-foreground font-mono uppercase tracking-widest">
                 {user?.role === "admin" ? "Manager v1.0" : "Portal ucznia"}
               </p>
@@ -90,10 +90,10 @@ export default function AdminLayout() {
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-            <Zap className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-md">
+            <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
           </div>
-          <span className="text-sm font-bold text-foreground">CourseHub</span>
+          <span className="text-sm font-bold text-foreground">HRL Course Hub</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleLogout} className="text-muted-foreground hover:text-destructive">

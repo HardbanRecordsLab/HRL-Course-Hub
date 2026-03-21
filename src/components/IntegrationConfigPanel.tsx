@@ -65,8 +65,8 @@ const configs: Record<string, IntegrationConfig> = {
       { key: "api_key", label: "API Key", type: "password", placeholder: "xkeysib-...", description: "Brevo → Settings → SMTP & API", mono: true },
       { key: "smtp_login", label: "SMTP Login", type: "text", placeholder: "twoj@email.com", mono: true },
       { key: "smtp_key", label: "SMTP Key", type: "password", placeholder: "xsmtpsib-...", mono: true },
-      { key: "from_email", label: "From Email", type: "text", placeholder: "kursy@twojadomena.pl", mono: true },
-      { key: "from_name", label: "From Name", type: "text", placeholder: "Moja Platforma" },
+      {key: "from_email", label: "From Email", type: "text", placeholder: "kursy@hardbanrecordslab.online", mono: true },
+      {key: "from_name", label: "From Name", type: "text", placeholder: "HRL Course Hub" },
       { key: "tpl_granted", label: "Template ID: Dostęp przyznany", type: "number", placeholder: "1", mono: true },
       { key: "tpl_expiring", label: "Template ID: 7 dni przed wygaśnięciem", type: "number", placeholder: "2", mono: true },
       { key: "tpl_expired", label: "Template ID: Dostęp wygasł", type: "number", placeholder: "3", mono: true },
@@ -143,7 +143,7 @@ const configs: Record<string, IntegrationConfig> = {
     description: "Webhook dispatcher — 10 eventów do no-code automatyzacji (Notion, Airtable, Discord...)",
     freeLimit: "n8n self-hosted darmowe · Make.com 1 000 ops/mies.",
     fields: [
-      { key: "webhook_url", label: "Webhook URL", type: "text", placeholder: "https://n8n.twojserwer.pl/webhook/coursehub", mono: true },
+      { key: "webhook_url", label: "Webhook URL", type: "text", placeholder: "https://n8n.hardbanrecordslab.online/webhook/coursehub", mono: true },
       { key: "secret", label: "Webhook Secret (HMAC)", type: "password", placeholder: "whsec_...", mono: true },
     ],
     events: [

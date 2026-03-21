@@ -43,8 +43,8 @@ export default function RegisterPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <Zap className="w-7 h-7 text-primary-foreground" />
+          <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4 overflow-hidden rounded-2xl">
+            <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-foreground font-['Space_Grotesk']">CourseHub</h1>
           <p className="text-muted-foreground text-sm mt-1">Utwórz nowe konto</p>
