@@ -20,6 +20,20 @@ app.add_middleware(
 async def health():
     return {"status": "healthy", "service": "course-hub", "arch": "Unified HRL"}
 
+@app.get("/api/auth")
+async def get_auth_profile(email: str):
+    """
+    Standardowy endpoint autoryzacji - Profil użytkownika z Access Managera.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(f"{ACCESS_MANAGER_URL}/api/auth/profile", params={"email": email})
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail="Auth Service Error")
+            return resp.json()
+        except Exception as e:
+            raise HTTPException(status_code=503, detail=f"Access Manager Connection Error: {str(e)}")
+
 @app.get("/api/courses/access")
 async def check_course_access(course_id: str, email: str):
     # Verify PMP status or credits via Access Manager
