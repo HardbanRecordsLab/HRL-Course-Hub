@@ -38,7 +38,7 @@ export default function AdminLayout() {
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 flex items-center justify-center overflow-hidden rounded-lg">
-              <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">HRL Course Hub</h1>
@@ -91,7 +91,7 @@ export default function AdminLayout() {
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 flex items-center justify-center overflow-hidden rounded-md">
-            <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <span className="text-sm font-bold text-foreground">HRL Course Hub</span>
         </div>

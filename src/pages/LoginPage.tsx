@@ -39,7 +39,7 @@ export default function LoginPage() {
       >
         <div className="text-center mb-8">
           <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4 overflow-hidden rounded-2xl">
-            <img src="/favicon.ico" alt="Logo" className="w-full h-full object-contain" />
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-foreground font-['Space_Grotesk']">HRL Course Hub</h1>
           <p className="text-muted-foreground text-sm mt-1">Zaloguj się do panelu</p>

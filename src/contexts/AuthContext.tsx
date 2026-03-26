@@ -50,7 +50,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
       });
 
       if (!response.ok) {
@@ -62,7 +63,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setError(null);
     } catch (err: any) {
       console.error("SSO Auth Error:", err.message);
-      setError(err.message);
+      if (err.name === 'AbortError') {
+        setError('Serwer autoryzacyjny nie odpowiada. Spróbuj ponownie później.');
+      } else {
+        setError(err.message);
+      }
       setUser(null);
     } finally {
       setIsLoading(false);
