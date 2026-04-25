@@ -1,115 +1,120 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+// src/contexts/AuthContext.tsx
+// Feature: hrl-ecosystem-deployment
+// IDENTYCZNY we wszystkich 9 frontendach — nie modyfikować per-app
+// v2: Cookie-based SSO — login on WP, cookie shared across all subdomains
 
-// URL do serwisu HRL Access Manager
-const ACCESS_MANAGER_URL = import.meta.env.VITE_ACCESS_MANAGER_URL || 'http://localhost:9107';
-const WP_LOGIN_URL = import.meta.env.VITE_WP_LOGIN_URL || 'https://hardbanrecordslab.online/wp-login.php';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
+const ACCESS_MANAGER_URL = import.meta.env.VITE_ACCESS_MANAGER_URL as string;
+const WP_LOGIN_URL = import.meta.env.VITE_WP_LOGIN_URL as string;
 
 interface User {
-  userId: number | string;
+  userId: string;
   email: string;
-  plan: string;
+  plan: 'free' | 'starter' | 'pro' | 'label';
   credits: number;
-  is_premium: boolean;
+  expiresAt?: string;
 }
 
-interface AuthContextType {
+interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  error: string | null;
-  login: () => void;
-  logout: () => void;
-  refreshCredits: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// Funkcja pomocnicza do czytania ciasteczek (jeśli token jest np. pod nazwą jwt_token)
-const getCookie = (name: string) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift();
-  return null;
-};
+// ── Loading spinner ───────────────────────────────────────────────────────────
+const LoadingScreen = () => (
+  <div style={{
+    minHeight: '100vh',
+    background: '#0a0a0f',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}>
+    <div style={{
+      width: '40px', height: '40px',
+      border: '3px solid rgba(168,85,247,0.3)',
+      borderTop: '3px solid #a855f7',
+      borderRadius: '50%',
+      animation: 'hrl-spin 0.8s linear infinite',
+    }} />
+    <style>{`@keyframes hrl-spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+// ── AuthProvider ──────────────────────────────────────────────────────────────
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const verifyToken = async () => {
+  const verifyToken = async (): Promise<void> => {
     try {
-      // Pobieramy token z LocalStorage (zapasowo) lub Ciasteczka
-      const token = localStorage.getItem('jwt_token') || getCookie('jwt_token');
-      
-      if (!token) {
-        throw new Error('Brak tokenu autoryzacyjnego');
-      }
-
-      const response = await fetch(`${ACCESS_MANAGER_URL}/api/auth/verify`, {
+      const res = await fetch(`${ACCESS_MANAGER_URL}/api/auth/verify`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        signal: AbortSignal.timeout(10000) // 10 second timeout
+        credentials: 'include',
       });
-
-      if (!response.ok) {
-        throw new Error('Token nieważny lub wygasł');
+      if (res.status === 401) {
+        const returnUrl = encodeURIComponent(window.location.href);
+        window.location.href = `${WP_LOGIN_URL}?redirect_to=${returnUrl}`;
+        return;
       }
-
-      const userData = await response.json();
-      setUser(userData);
-      setError(null);
-    } catch (err: any) {
-      console.error("SSO Auth Error:", err.message);
-      if (err.name === 'AbortError') {
-        setError('Serwer autoryzacyjny nie odpowiada. Spróbuj ponownie później.');
-      } else {
-        setError(err.message);
+      if (res.ok) {
+        setUser(await res.json());
       }
-      setUser(null);
+    } catch {
+      // Network error — keep loading state, retry
     } finally {
       setIsLoading(false);
     }
   };
 
+  const refreshSession = async (): Promise<void> => {
+    try {
+      const res = await fetch(`${ACCESS_MANAGER_URL}/api/auth/refresh`, {
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        setUser(null);
+        const returnUrl = encodeURIComponent(window.location.href);
+        window.location.href = `${WP_LOGIN_URL}?redirect_to=${returnUrl}`;
+        return;
+      }
+      if (res.ok) setUser(await res.json());
+    } catch {}
+  };
+
+  const logout = async (): Promise<void> => {
+    try {
+      await fetch(`${ACCESS_MANAGER_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } finally {
+      setUser(null);
+      window.location.href = WP_LOGIN_URL;
+    }
+  };
+
   useEffect(() => {
-    // 1. Weryfikacja przy starcie
     verifyToken();
-
-    // 2. Poll co 60 sekund (odświeżanie sesji i pobieranie najnowszego stanu kredytów)
-    const intervalId = setInterval(verifyToken, 60000);
-
-    return () => clearInterval(intervalId);
+    const interval = setInterval(refreshSession, 60_000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = () => {
-    window.location.href = WP_LOGIN_URL;
-  };
-
-  const logout = () => {
-    localStorage.removeItem('jwt_token');
-    document.cookie = 'jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    setUser(null);
-    window.location.href = WP_LOGIN_URL;
-  };
-
-  const refreshCredits = async () => {
-    await verifyToken();
-  };
+  if (isLoading) return <LoadingScreen />;
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, error, login, logout, refreshCredits }}>
+    <AuthContext.Provider value={{ user, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+export const useAuth = (): AuthContextValue => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };
