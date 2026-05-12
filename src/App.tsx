@@ -13,6 +13,7 @@ import Tokens from "./pages/Tokens";
 import ActivityPage from "./pages/ActivityPage";
 import SettingsPage from "./pages/SettingsPage";
 import StudentPortal from "./pages/StudentPortal";
+import Auth from "./pages/Auth";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import NotFound from "./pages/NotFound";
@@ -25,9 +26,9 @@ function RedirectByRole() {
 }
 
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -37,11 +38,12 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/" element={isAuthenticated ? <RedirectByRole /> : <Auth />} />
       <Route path="/login" element={isAuthenticated ? <RedirectByRole /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/portal" replace /> : <RegisterPage />} />
       
-      <Route element={isAuthenticated ? <AdminLayout /> : <Navigate to="/login" replace />}>
-        <Route path="/" element={<ProtectedRoute allowedRoles={["admin"]}><Dashboard /></ProtectedRoute>} />
+      <Route element={isAuthenticated ? <AdminLayout /> : <Navigate to="/" replace />}>
+        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><Dashboard /></ProtectedRoute>} />
         <Route path="/courses" element={<ProtectedRoute allowedRoles={["admin"]}><Courses /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute allowedRoles={["admin"]}><UsersPage /></ProtectedRoute>} />
         <Route path="/tokens" element={<ProtectedRoute allowedRoles={["admin"]}><Tokens /></ProtectedRoute>} />

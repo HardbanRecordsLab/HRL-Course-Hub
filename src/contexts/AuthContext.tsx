@@ -8,9 +8,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 const ACCESS_MANAGER_URL = import.meta.env.VITE_ACCESS_MANAGER_URL as string;
 const WP_LOGIN_URL = import.meta.env.VITE_WP_LOGIN_URL as string;
 
+export type UserRole = 'admin' | 'student' | 'manager' | 'viewer' | string;
+
 interface User {
   userId: string;
   email: string;
+  role: UserRole;
   plan: 'free' | 'starter' | 'pro' | 'label';
   credits: number;
   expiresAt?: string;
@@ -18,6 +21,7 @@ interface User {
 
 interface AuthContextValue {
   user: User | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
 }
@@ -106,8 +110,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   if (isLoading) return <LoadingScreen />;
 
+  const isAuthenticated = Boolean(user);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
