@@ -22,7 +22,7 @@ const queryClient = new QueryClient();
 
 function RedirectByRole() {
   const { user } = useAuth();
-  return <Navigate to={user?.role === "student" ? "/portal" : "/"} replace />;
+  return <Navigate to={user?.role === "student" ? "/portal" : "/dashboard"} replace />;
 }
 
 function AppRoutes() {
