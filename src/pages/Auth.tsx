@@ -1,18 +1,17 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function AuthPage() {
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const returnUrl = encodeURIComponent(window.location.href);
-    const wpLoginUrl = import.meta.env.VITE_WP_LOGIN_URL || "https://hardbanrecordslab.online/login";
-    window.location.href = `${wpLoginUrl}?redirect_to=${returnUrl}`;
-  }, []);
+    localStorage.setItem("hrl_local_app_auth", "hrl-local-app-token");
+    navigate("/", { replace: true });
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-dark p-4">
-      <div className="text-center text-white/90">
-        <p className="text-xl font-semibold">Redirecting to centralized login...</p>
-        <p className="text-sm text-white/70 mt-3">Use WordPress SSO for authentication across the HRL ecosystem.</p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <p className="text-sm text-muted-foreground">Local app access enabled.</p>
     </div>
   );
 }

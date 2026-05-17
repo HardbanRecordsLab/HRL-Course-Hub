@@ -1,17 +1,17 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function LoginPage() {
+export default function AuthPage() {
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const returnUrl = encodeURIComponent(window.location.href);
-    const wpLoginUrl = import.meta.env.VITE_WP_LOGIN_URL || "https://hardbanrecordslab.online/login";
-    window.location.href = `${wpLoginUrl}?redirect_to=${returnUrl}`;
-  }, []);
+    localStorage.setItem("hrl_local_app_auth", "hrl-local-app-token");
+    navigate("/", { replace: true });
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="text-center">
-        <p className="text-base text-foreground">Redirecting to centralized login...</p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <p className="text-sm text-muted-foreground">Local app access enabled.</p>
     </div>
   );
 }
