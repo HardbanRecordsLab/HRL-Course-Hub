@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Key, Ban, Search, X, Copy } from "lucide-react";
+import { Key, Ban, Search, X, Copy, Loader2, Wifi, WifiOff } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useTokens, useIsWpConnected } from "@/hooks/useWpData";
 
 interface Token {
   id: number;
@@ -18,13 +19,12 @@ interface Token {
   jti?: string;
 }
 
-const initialTokens: Token[] = [
-  { id: 1, user: "Anna Kowalska", course: "Cyfrowy Zen", issuedAt: "2026-03-08 10:32", expiresAt: "2026-03-09 10:32", usedCount: 3, status: "active", ip: "91.198.x.x", jti: "tok_a1b2c3d4e5f6" },
-  { id: 2, user: "Marcin Nowak", course: "Architekt Popytu 4.0", issuedAt: "2026-03-08 10:27", expiresAt: "2026-03-08 22:27", usedCount: 1, status: "active", ip: "83.12.x.x", jti: "tok_g7h8i9j0k1l2" },
-  { id: 3, user: "Piotr Wiśniewski", course: "Cyfrowy Zen", issuedAt: "2026-03-08 10:20", expiresAt: "2026-03-09 10:20", usedCount: 0, status: "failed", ip: "185.43.x.x", jti: "tok_m3n4o5p6q7r8" },
-  { id: 4, user: "Katarzyna Dąbrowska", course: "EFT po toksycznym związku", issuedAt: "2026-03-07 18:45", expiresAt: "2026-03-08 18:45", usedCount: 8, status: "expired", ip: "77.55.x.x", jti: "tok_s9t0u1v2w3x4" },
-  { id: 5, user: "Tomasz Zieliński", course: "Cyfrowy Zen", issuedAt: "2026-03-08 09:10", expiresAt: "2026-03-09 09:10", usedCount: 2, status: "active", ip: "195.150.x.x", jti: "tok_y5z6a7b8c9d0" },
-];
+const API_URL = import.meta.env.VITE_HRL_API_URL || "https://course-hub.hardbanrecordslab.online";
+
+const formatTime = (t: string | undefined | null) => {
+  if (!t) return "-";
+  try { return new Date(t).toLocaleString("pl-PL"); } catch { return t; }
+};
 
 const statusTabs = [
   { id: "all", label: "Wszystkie" },
@@ -34,29 +34,32 @@ const statusTabs = [
 ];
 
 export default function Tokens() {
-  const [tokens, setTokens] = useState(initialTokens);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [revokeDialog, setRevokeDialog] = useState<Token | null>(null);
   const { toast } = useToast();
+  const isWpConnected = useIsWpConnected();
+  const { data: tokens = [], isLoading, refetch } = useTokens(statusFilter, search || undefined);
 
   const stats = useMemo(() => ({
-    active: tokens.filter(t => t.status === "active").length,
+    active: tokens.filter((t: any) => t.status === "active").length,
     today: tokens.length,
-    failed: tokens.filter(t => t.status === "failed").length,
+    failed: tokens.filter((t: any) => t.status === "failed").length,
   }), [tokens]);
 
-  const filtered = useMemo(() =>
-    tokens.filter(t => {
-      const matchSearch = !search || t.user.toLowerCase().includes(search.toLowerCase()) || t.course.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = statusFilter === "all" || t.status === statusFilter;
-      return matchSearch && matchStatus;
-    }), [tokens, search, statusFilter]);
-
-  const handleRevoke = () => {
+  const handleRevoke = async () => {
     if (!revokeDialog) return;
-    setTokens(prev => prev.map(t => t.id === revokeDialog.id ? { ...t, status: "revoked" } : t));
-    toast({ title: "Token unieważniony", description: `Token ${revokeDialog.jti} został unieważniony` });
+    try {
+      const res = await fetch(`${API_URL}/api/tokens/${revokeDialog.id}/revoke`, { method: "POST" });
+      if (res.ok) {
+        toast({ title: "Token unieważniony", description: `Token został unieważniony` });
+        refetch();
+      } else {
+        toast({ title: "Błąd", description: "Nie udało się unieważnić tokena", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Błąd", description: "Błąd połączenia z API", variant: "destructive" });
+    }
     setRevokeDialog(null);
   };
 
@@ -67,9 +70,18 @@ export default function Tokens() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tokeny JWT</h1>
-        <p className="text-sm text-muted-foreground mt-1">Zarządzaj tokenami dostępu do kursów zewnętrznych</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Tokeny JWT</h1>
+          <p className="text-sm text-muted-foreground mt-1">Zarządzaj tokenami dostępu do kursów zewnętrznych</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs">
+          {isWpConnected ? (
+            <span className="flex items-center gap-1.5 text-primary"><Wifi className="w-3.5 h-3.5" /> API</span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-muted-foreground"><WifiOff className="w-3.5 h-3.5" /> Dane demo</span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -120,21 +132,27 @@ export default function Tokens() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-border/50 hover:bg-ch-surface-2 transition-colors">
+              {isLoading && (
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline-block mr-2" />Ładowanie...</td></tr>
+              )}
+              {!isLoading && tokens.length === 0 && (
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">Brak wyników</td></tr>
+              )}
+              {tokens.map((t: any) => (
+                <tr key={t.jti || t.id} className="border-b border-border/50 hover:bg-ch-surface-2 transition-colors">
                   <td className="px-5 py-4">
                     <p className="font-medium">{t.user}</p>
-                    <p className="text-[11px] text-muted-foreground font-mono">{t.ip}</p>
+                    <p className="text-[11px] text-muted-foreground font-mono">{t.ip || "-"}</p>
                   </td>
                   <td className="px-5 py-4 text-muted-foreground">{t.course}</td>
-                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">{t.issuedAt}</td>
-                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">{t.expiresAt}</td>
-                  <td className="px-5 py-4 font-mono">{t.usedCount}</td>
+                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">{formatTime(t.issuedAt)}</td>
+                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">{formatTime(t.expiresAt)}</td>
+                  <td className="px-5 py-4 font-mono">{t.usedCount ?? 0}</td>
                   <td className="px-5 py-4"><StatusBadge status={t.status} /></td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       {t.jti && (
-                        <button onClick={() => copyJti(t.jti!)} className="text-muted-foreground hover:text-foreground transition-colors" title="Kopiuj Token ID">
+                        <button onClick={() => copyJti(t.jti)} className="text-muted-foreground hover:text-foreground transition-colors" title="Kopiuj Token ID">
                           <Copy className="w-3 h-3" />
                         </button>
                       )}
@@ -147,9 +165,6 @@ export default function Tokens() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">Brak wyników</td></tr>
-              )}
             </tbody>
           </table>
         </div>

@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Download, Search, X, Filter } from "lucide-react";
-import { recentActivity } from "@/lib/mockData";
+import { Download, Search, X, Filter, Loader2, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useActivity, useIsWpConnected } from "@/hooks/useWpData";
 
 const actionLabels: Record<string, string> = {
   "access.granted": "Dostęp przyznany",
@@ -25,23 +25,23 @@ const actionColors: Record<string, string> = {
 
 const actionTypes = ["all", "access.granted", "token.issued", "token.failed", "course.completed", "access.expired", "pmpro.level_changed"];
 
+const formatTime = (t: string | undefined | null) => {
+  if (!t) return "-";
+  try { return new Date(t).toLocaleString("pl-PL"); } catch { return t; }
+};
+
 export default function ActivityPage() {
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
-
-  const filtered = useMemo(() =>
-    recentActivity.filter(a => {
-      const matchSearch = !search || a.user.toLowerCase().includes(search.toLowerCase()) || a.course.toLowerCase().includes(search.toLowerCase()) || a.action.toLowerCase().includes(search.toLowerCase());
-      const matchAction = actionFilter === "all" || a.action === actionFilter;
-      return matchSearch && matchAction;
-    }), [search, actionFilter]);
+  const isWpConnected = useIsWpConnected();
+  const { data: activity = [], isLoading } = useActivity(actionFilter, search || undefined);
 
   const exportCSV = () => {
     const headers = ["ID", "Akcja", "Użytkownik", "Email", "Kurs", "Czas", "IP"];
-    const rows = filtered.map(a => [a.id, a.action, a.user, a.email, a.course, a.time, a.ip]);
-    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const rows = activity.map((a: any) => [a.id, a.action, a.user, a.email, a.course, a.time, a.ip]);
+    const csv = [headers.join(","), ...rows.map((r: string[]) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -93,9 +93,12 @@ export default function ActivityPage() {
       )}
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-        {filtered.map((a, i) => (
+        {isLoading && (
+          <div className="py-12 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline-block mr-2" />Ładowanie...</div>
+        )}
+        {!isLoading && activity.map((a: any, i: number) => (
           <motion.div
-            key={a.id}
+            key={a.id || i}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.03 }}
@@ -111,16 +114,23 @@ export default function ActivityPage() {
               </p>
               <p className="text-xs text-muted-foreground">{a.course}</p>
             </div>
-            <span className="text-xs text-muted-foreground font-mono flex-shrink-0">{a.ip}</span>
-            <span className="text-xs text-muted-foreground flex-shrink-0">{a.time}</span>
+            <span className="text-xs text-muted-foreground font-mono flex-shrink-0">{a.ip || "-"}</span>
+            <span className="text-xs text-muted-foreground flex-shrink-0">{formatTime(a.time)}</span>
           </motion.div>
         ))}
-        {filtered.length === 0 && (
+        {!isLoading && activity.length === 0 && (
           <div className="py-12 text-center text-muted-foreground text-sm">Brak pasujących wyników</div>
         )}
       </motion.div>
 
-      <p className="text-xs text-muted-foreground text-right">{filtered.length} z {recentActivity.length} zdarzeń</p>
+      <p className="text-xs text-muted-foreground text-right">{activity.length} zdarzeń</p>
+      <div className="flex items-center gap-1.5 text-xs justify-end">
+        {isWpConnected ? (
+          <span className="flex items-center gap-1.5 text-primary"><Wifi className="w-3.5 h-3.5" /> API</span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-muted-foreground"><WifiOff className="w-3.5 h-3.5" /> Dane demo</span>
+        )}
+      </div>
     </div>
   );
 }

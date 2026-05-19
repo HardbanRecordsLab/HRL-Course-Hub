@@ -1,139 +1,150 @@
 import { useQuery } from "@tanstack/react-query";
 import { getWpConfig } from "@/lib/wpConfig";
-import * as wpApi from "@/lib/wpApi";
 import {
   users as mockUsers,
   courses as mockCourses,
   pmpro_levels as mockPmproLevels,
+  recentActivity as mockActivity,
 } from "@/lib/mockData";
 
-/** Returns true if WP connection is configured */
+const API_URL = import.meta.env.VITE_HRL_API_URL || "https://course-hub.hardbanrecordslab.online";
+
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem("hrl_jwt_token");
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_URL}${path}`, { ...options, headers: { ...headers, ...options?.headers } });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
 export function useIsWpConnected() {
   const cfg = getWpConfig();
   return !!cfg?.siteUrl;
 }
 
-/** Fetch users from WP or fallback to mock */
 export function useWpUsers(search?: string) {
-  const connected = useIsWpConnected();
-
   return useQuery({
-    queryKey: ["wp-users", search, connected],
+    queryKey: ["ch-users", search],
     queryFn: async () => {
-      if (!connected) {
-        // Return mock data mapped to unified shape
-        let data = mockUsers;
-        if (search) {
-          const q = search.toLowerCase();
-          data = data.filter(
-            (u) =>
-              u.name.toLowerCase().includes(q) ||
-              u.email.toLowerCase().includes(q)
-          );
-        }
-        return data.map((u) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          level: u.level,
-          courses: u.courses,
-          status: u.status,
-          lastAccess: u.lastAccess,
-          registeredAt: u.registeredAt,
-          source: "mock" as const,
-        }));
+      try {
+        const users = await apiFetch<any[]>(`/api/users${search ? `?search=${encodeURIComponent(search)}` : ""}`);
+        if (users.length > 0) return users.map((u: any) => ({ ...u, source: "api" as const }));
+      } catch {
+        // fall through to mock
       }
-
-      // Fetch from WP
-      const wpUsers = await wpApi.getUsers({
-        per_page: 100,
-        search: search || undefined,
-      });
-
-      return wpUsers.map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email || "",
-        level: u.roles?.[0] || "subscriber",
-        courses: 0,
-        status: "active" as const,
-        lastAccess: "-",
-        registeredAt: u.registered_date || "",
-        source: "wp" as const,
-      }));
+      let data = mockUsers;
+      if (search) {
+        const q = search.toLowerCase();
+        data = data.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+      }
+      return data.map((u) => ({ ...u, source: "mock" as const }));
     },
     staleTime: 30_000,
-    retry: connected ? 2 : 0,
   });
 }
 
-/** Fetch courses — from mock for now (WP CPT can be customized) */
 export function useWpCourses() {
-  const connected = useIsWpConnected();
-
   return useQuery({
-    queryKey: ["wp-courses", connected],
+    queryKey: ["ch-courses"],
     queryFn: async () => {
-      if (!connected) {
-        return mockCourses.map((c) => ({ ...c, source: "mock" as const }));
-      }
-
-      // Try fetching custom post type 'courses', fallback to 'posts'
       try {
-        const posts = await wpApi.getPosts("courses", {
-          per_page: 100,
-          status: "any",
-        });
-        return posts.map((p) => ({
-          id: p.id,
-          title: p.title.rendered,
-          slug: p.slug,
-          url: p.link,
-          status: (p.status === "publish" ? "active" : "draft") as
-            | "active"
-            | "draft"
-            | "archived",
-          authMethod: "jwt" as const,
-          pmpro_levels: [] as number[],
-          activeUsers: 0,
-          tokenExpiry: 86400,
-          category: "",
-          source: "wp" as const,
-        }));
+        const courses = await apiFetch<any[]>("/api/courses");
+        if (courses.length > 0) {
+          return courses.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            slug: c.slug,
+            url: c.url,
+            status: c.status,
+            authMethod: c.authMethod || "jwt",
+            pmpro_levels: c.pmpro_levels || [],
+            activeUsers: c.activeUsers || 0,
+            tokenExpiry: c.tokenExpiry || 86400,
+            category: c.category || "",
+            secretKey: c.secretKey || "",
+            source: "api" as const,
+          }));
+        }
       } catch {
-        // If CPT doesn't exist, return mock
-        return mockCourses.map((c) => ({ ...c, source: "mock" as const }));
+        // fall through
       }
+      return mockCourses.map((c) => ({ ...c, source: "mock" as const }));
     },
     staleTime: 30_000,
-    retry: connected ? 2 : 0,
   });
 }
 
-/** Fetch PMPro levels */
 export function useWpPmproLevels() {
-  const connected = useIsWpConnected();
-
   return useQuery({
-    queryKey: ["wp-pmpro-levels", connected],
+    queryKey: ["ch-plans"],
     queryFn: async () => {
-      if (!connected) {
-        return mockPmproLevels.map((l) => ({ ...l, source: "mock" as const }));
-      }
-
       try {
-        const levels = await wpApi.getPmproLevels();
-        return levels.map((l) => ({
-          id: l.id,
-          name: l.name,
-          price: parseFloat(l.initial_payment || l.billing_amount || "0"),
-          source: "wp" as const,
-        }));
+        const plans = await apiFetch<any[]>("/api/plans");
+        if (plans.length > 0) {
+          return plans.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            source: "api" as const,
+          }));
+        }
       } catch {
-        return mockPmproLevels.map((l) => ({ ...l, source: "mock" as const }));
+        // fall through
       }
+      return mockPmproLevels.map((l) => ({ ...l, source: "mock" as const }));
     },
     staleTime: 60_000,
-    retry: connected ? 2 : 0,
+  });
+}
+
+export function useTokens(status?: string, search?: string) {
+  return useQuery({
+    queryKey: ["ch-tokens", status, search],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams();
+        if (status && status !== "all") params.set("status", status);
+        if (search) params.set("search", search);
+        params.set("limit", "200");
+        return await apiFetch<any[]>(`/api/tokens?${params}`);
+      } catch {
+        const { tokens: mockTokens } = await import("@/lib/mockData");
+        return mockTokens;
+      }
+    },
+    staleTime: 15_000,
+  });
+}
+
+export function useActivity(action?: string, search?: string) {
+  return useQuery({
+    queryKey: ["ch-activity", action, search],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams();
+        if (action && action !== "all") params.set("action", action);
+        if (search) params.set("search", search);
+        params.set("limit", "200");
+        return await apiFetch<any[]>(`/api/activity?${params}`);
+      } catch {
+        return mockActivity;
+      }
+    },
+    staleTime: 10_000,
+  });
+}
+
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: ["ch-dashboard-stats"],
+    queryFn: async () => {
+      try {
+        return await apiFetch<any>("/api/dashboard/stats");
+      } catch {
+        return { activeUsers: 6, activeCourses: 3, draftCourses: 1, todayTokens: 5, plansCount: 4 };
+      }
+    },
+    staleTime: 30_000,
   });
 }

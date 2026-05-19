@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ExternalLink, Users, Clock, Shield, Pencil, Trash2, Copy, Eye, EyeOff, RefreshCw, X, Wifi, WifiOff, Loader2 } from "lucide-react";
+import { Plus, ExternalLink, Users, Clock, Shield, Pencil, Trash2, Copy, Eye, EyeOff, RefreshCw, X, Wifi, WifiOff, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import { pmpro_levels } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useWpCourses, useIsWpConnected } from "@/hooks/useWpData";
+
+const API_URL = import.meta.env.VITE_HRL_API_URL || "https://course-hub.hardbanrecordslab.online";
 
 interface Course {
   id: number;
@@ -92,26 +94,43 @@ export default function Courses() {
     return key;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title || !form.url) {
       toast({ title: "Błąd", description: "Tytuł i URL są wymagane", variant: "destructive" });
       return;
     }
-    if (editingCourse) {
-      setCourses(prev => prev.map(c => c.id === editingCourse.id ? { ...form, id: editingCourse.id } : c));
-      toast({ title: "Zaktualizowano", description: `Kurs "${form.title}" został zapisany` });
-    } else {
-      const newId = Math.max(...courses.map(c => c.id)) + 1;
-      setCourses(prev => [...prev, { ...form, id: newId }]);
-      toast({ title: "Dodano kurs", description: `"${form.title}" został utworzony` });
+    try {
+      if (editingCourse) {
+        await fetch(`${API_URL}/api/courses/${editingCourse.id}`, {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        setCourses(prev => prev.map(c => c.id === editingCourse.id ? { ...form, id: editingCourse.id } : c));
+        toast({ title: "Zaktualizowano", description: `Kurs "${form.title}" został zapisany` });
+      } else {
+        const res = await fetch(`${API_URL}/api/courses`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        const data = await res.json();
+        setCourses(prev => [...prev, { ...form, id: data.id }]);
+        toast({ title: "Dodano kurs", description: `"${form.title}" został utworzony` });
+      }
+    } catch {
+      toast({ title: "Błąd", description: "Nie udało się zapisać kursu", variant: "destructive" });
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingCourse) return;
-    setCourses(prev => prev.filter(c => c.id !== deletingCourse.id));
-    toast({ title: "Usunięto", description: `Kurs "${deletingCourse.title}" został usunięty` });
+    try {
+      await fetch(`${API_URL}/api/courses/${deletingCourse.id}`, { method: "DELETE" });
+      setCourses(prev => prev.filter(c => c.id !== deletingCourse.id));
+      toast({ title: "Usunięto", description: `Kurs "${deletingCourse.title}" został usunięty` });
+    } catch {
+      toast({ title: "Błąd", description: "Nie udało się usunąć kursu", variant: "destructive" });
+    }
     setDeleteDialogOpen(false);
     setDeletingCourse(null);
   };
@@ -130,12 +149,17 @@ export default function Courses() {
     toast({ title: "Skopiowano", description: "Secret key skopiowany do schowka" });
   };
 
-  const toggleStatus = (courseId: number) => {
-    setCourses(prev => prev.map(c => {
-      if (c.id !== courseId) return c;
-      const next = c.status === "active" ? "draft" : c.status === "draft" ? "archived" : "active";
-      return { ...c, status: next };
-    }));
+  const toggleStatus = async (courseId: any) => {
+    try {
+      await fetch(`${API_URL}/api/courses/${courseId}/status`, { method: "PATCH" });
+      setCourses(prev => prev.map((c: any) => {
+        if (c.id !== courseId) return c;
+        const next = c.status === "active" ? "draft" : c.status === "draft" ? "archived" : "active";
+        return { ...c, status: next };
+      }));
+    } catch {
+      toast({ title: "Błąd", description: "Nie udało się zmienić statusu", variant: "destructive" });
+    }
   };
 
   return (

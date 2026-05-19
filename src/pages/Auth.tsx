@@ -1,17 +1,18 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    localStorage.setItem("hrl_local_app_auth", "hrl-local-app-token");
-    navigate("/", { replace: true });
-  }, [navigate]);
+    if (isAuthenticated) {
+      navigate("/", { replace: true });
+    } else {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate, isAuthenticated]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <p className="text-sm text-muted-foreground">Local app access enabled.</p>
-    </div>
-  );
+  return null;
 }

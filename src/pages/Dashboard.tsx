@@ -3,8 +3,8 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { motion } from "framer-motion";
 import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
-import { chartData, recentActivity, healthChecks, integrations } from "@/lib/mockData";
-import { useWpUsers, useWpCourses, useWpPmproLevels, useIsWpConnected } from "@/hooks/useWpData";
+import { chartData, healthChecks, integrations } from "@/lib/mockData";
+import { useWpUsers, useWpCourses, useWpPmproLevels, useIsWpConnected, useDashboardStats, useActivity } from "@/hooks/useWpData";
 
 const actionIcons: Record<string, { emoji: string; color: string }> = {
   "access.granted": { emoji: "🟢", color: "text-primary" },
@@ -28,11 +28,13 @@ export default function Dashboard() {
   const { data: wpUsers = [] } = useWpUsers();
   const { data: wpCourses = [] } = useWpCourses();
   const { data: wpLevels = [] } = useWpPmproLevels();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const isWpConnected = useIsWpConnected();
+  const { data: recentActivity = [] } = useActivity(undefined, undefined);
 
-  const activeUsers = wpUsers.filter(u => u.status === "active").length;
-  const activeCourses = wpCourses.filter(c => c.status === "active").length;
-  const draftCourses = wpCourses.filter(c => c.status === "draft").length;
+  const activeUsers = stats?.activeUsers ?? wpUsers.filter((u: any) => u.status === "active").length;
+  const activeCourses = stats?.activeCourses ?? wpCourses.filter((c: any) => c.status === "active").length;
+  const draftCourses = stats?.draftCourses ?? wpCourses.filter((c: any) => c.status === "draft").length;
 
   return (
     <div className="space-y-6">
@@ -54,8 +56,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Users} label="Aktywni użytkownicy" value={String(activeUsers)} change={isWpConnected ? "z WP" : "+12%"} color="green" delay={0} />
         <StatCard icon={BookOpen} label="Aktywne kursy" value={String(activeCourses)} change={draftCourses > 0 ? `${draftCourses} draft` : ""} changeType="neutral" color="blue" delay={0.05} />
-        <StatCard icon={Key} label="Tokeny dziś" value="127" change="+23%" color="purple" delay={0.1} />
-        <StatCard icon={DollarSign} label="PMPro Levels" value={String(wpLevels.length)} change={isWpConnected ? "z WP" : "4 poziomy"} color="amber" delay={0.15} />
+        <StatCard icon={Key} label="Tokeny dziś" value={String(stats?.todayTokens ?? 127)} change={isWpConnected ? "z API" : "+23%"} color="purple" delay={0.1} />
+        <StatCard icon={DollarSign} label="PMPro Levels" value={String(stats?.plansCount ?? wpLevels.length)} change={isWpConnected ? "z API" : "4 poziomy"} color="amber" delay={0.15} />
       </div>
 
       {/* Chart + Activity */}

@@ -43,10 +43,11 @@ export default function UsersPage() {
   const { data: wpUsers = [], isLoading, isError } = useWpUsers(search || undefined);
 
   const filtered = useMemo(() =>
-    wpUsers.filter(u => {
+    wpUsers.filter((u: any) => {
       const matchesStatus = statusFilter === "all" || u.status === statusFilter;
-      return matchesStatus;
-    }), [wpUsers, statusFilter]);
+      const matchesSearch = !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase());
+      return matchesStatus && matchesSearch;
+    }), [wpUsers, statusFilter, search]);
 
   const openUser = (user: User) => {
     setSelectedUser(user);
