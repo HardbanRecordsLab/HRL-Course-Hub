@@ -501,6 +501,89 @@ async def dashboard_stats(db: Session = Depends(get_db)):
         "totalCourses": total_courses,
     }
 
+# --- Sync from WordPress via WP API ---
+@app.post("/api/sync/users")
+async def sync_users(db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    wp_url = os.getenv("WP_API_URL", "")
+    wp_auth = os.getenv("WP_APP_PASSWORD", "")
+    if not wp_url:
+        raise HTTPException(status_code=400, detail="WordPress not configured (set WP_API_URL in .env)")
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {}
+            if wp_auth:
+                headers["Authorization"] = f"Basic {wp_auth}"
+            resp = await client.get(
+                f"{wp_url.rstrip('/')}/wp-json/wp/v2/users?per_page=100&context=edit",
+                headers=headers, timeout=10.0
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=502, detail=f"WP API error: {resp.status_code}")
+            wp_users = resp.json()
+            synced = 0
+            for wp_u in wp_users:
+                email = wp_u.get("email") or f"{wp_u['slug']}@wp.local"
+                existing = db.execute(
+                    text("SELECT id FROM users WHERE email = :email OR wp_user_id = :wp_id"),
+                    {"email": email, "wp_id": wp_u["id"]}
+                ).fetchone()
+                if not existing:
+                    import uuid
+                    db.execute(text("""
+                        INSERT INTO users (id, email, full_name, username, wp_user_id, tier, is_active, created_at)
+                        VALUES (:id, :email, :name, :username, :wp_id, :tier, true, NOW())
+                    """), {
+                        "id": str(uuid.uuid4()),
+                        "email": email,
+                        "name": wp_u.get("name", wp_u["slug"]),
+                        "username": wp_u["slug"],
+                        "wp_id": wp_u["id"],
+                        "tier": "free",
+                    })
+                    synced += 1
+            db.commit()
+            log_action(db, AccessAction.granted, "system", "System", "users", "sync", f"Synced {synced} users from WP")
+            total = db.execute(text("SELECT COUNT(*) FROM users")).scalar()
+            return {"synced": synced, "totalUsers": total, "source": "wp-api"}
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"WP connection error: {str(e)}")
+
+# --- Seed data endpoint ---
+@app.post("/api/seed")
+async def seed_data(db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    results = {}
+    plans = db.execute(text("SELECT COUNT(*) FROM subscription_plans")).scalar()
+    if plans == 0:
+        seed_plans = [
+            ("starter", "Starter", 9700, "PLN", "month", '{"courses": 1, "support": "email"}'),
+            ("pro", "Pro", 29700, "PLN", "month", '{"courses": 5, "support": "priority", "certificates": true}'),
+            ("all-access", "All Access", 49700, "PLN", "month", '{"courses": -1, "support": "priority", "certificates": true, "api": true}'),
+            ("vip", "VIP", 99700, "PLN", "month", '{"courses": -1, "support": "24/7", "certificates": true, "api": true, "white_label": true}'),
+        ]
+        for p in seed_plans:
+            db.execute(text("INSERT INTO subscription_plans (id, name, price_cents, currency, period, features) VALUES (:id,:name,:price,:cur,:per,:feat) ON CONFLICT (id) DO NOTHING"),
+                       {"id": p[0], "name": p[1], "price": p[2], "cur": p[3], "per": p[4], "feat": p[5]})
+        db.commit()
+        results["plans"] = "seeded"
+    else:
+        results["plans"] = f"{plans} already exist"
+    admin = db.execute(text("SELECT id FROM users WHERE email = 'admin@hardbanrecordslab.online'")).fetchone()
+    if not admin:
+        import uuid
+        db.execute(text("""
+            INSERT INTO users (id, email, full_name, tier, is_premium, is_superuser, username, is_active)
+            VALUES (:id, 'admin@hardbanrecordslab.online', 'Admin HRL', 'admin', true, true, 'admin', true)
+        """), {"id": str(uuid.uuid4())})
+        db.commit()
+        results["admin"] = "created"
+    else:
+        results["admin"] = "already exists"
+    total_users = db.execute(text("SELECT COUNT(*) FROM users")).scalar()
+    results["totalUsers"] = total_users
+    return results
+
 def log_action(db: Session, action: AccessAction, user_email: str, user_name: str, course_name: str, course_id: str, details: str = ""):
     log = CHAccessLog(
         action=action.value,
